@@ -1,0 +1,1 @@
+https://learn.adafruit.com/adafruit-feather-32u4-radio-with-rfm69hcw-module/using-the-rfm69-radio?view=all#antenna-options
