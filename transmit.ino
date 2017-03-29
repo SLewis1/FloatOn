@@ -38,7 +38,7 @@
 //*********************************************************************************************
 #define NETWORKID     100  // The same on all nodes that talk to each other
 #define NODEID        2    // The unique identifier of this node
-#define RECEIVER      1    // The recipient of packets
+#define RECEIVER      10    // The recipient of packets
 
 //Match frequency to the hardware version of the radio on your Feather
 //#define FREQUENCY     RF69_433MHZ
