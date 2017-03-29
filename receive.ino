@@ -37,7 +37,7 @@
 // *********** IMPORTANT SETTINGS - YOU MUST CHANGE/ONFIGURE TO FIT YOUR HARDWARE *************
 //*********************************************************************************************
 #define NETWORKID     100  //the same on all nodes that talk to each other
-#define NODEID        1  
+#define NODEID        10  
 
 //Match frequency to the hardware version of the radio on your Feather
 //#define FREQUENCY     RF69_433MHZ
