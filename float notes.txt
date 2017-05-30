@@ -1,0 +1,50 @@
+floats start at 7am on odd hours
+start keeping track of data at 1+hour and end on following hour+10 
+7am (8:15 - 9:10)
+....
+3pm (4:15 - 5:10) 
+5pm (6:15 - 7:10) 
+7pm (8:15 - 9:10) 
+9pm (10:15 - 11:10)
+11pm (1:15 - 2:10)
+2am (4:15 - 5:10)
+
+want to record the shower on time, and duration
+
+3pm - 4:30pm floats
+1. 04:16-04:26 (10m)
+2.
+3.
+4.
+5.
+6.
+
+display will clear at 5:30 and look for new shower data
+
+transmit every 30seconds 
+
+have 12 batteries
+6 radios + 1 with sd card
+____________________________________
+order: 
+11 batteries
+2 featherRF (2 OOS)
+1 rtc/sd wing 
+stackable headers
+>6 blue leds
+1 display 2674
+1 perfboard
+5 charger adapters
+
+amzn 1 usb hub
+amzn cr1220 battery
+
+
+----------------
+need real time clock board to set the time. This can set 30 sec intervals for all the other boards.
+>6 line displays are hard to find. Can do a 4 line with switching
+________________
+box options:
+main material: wood, plastic, metal >>> wood
+front numbers: led stencil veneer, 2ea 4x7segment led >>> led stencil veneer
+top display: 16pin for backpack compatability, 20x4, oled is nicest, lcd is good
