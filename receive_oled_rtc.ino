@@ -1,5 +1,5 @@
 #include <SPI.h>
-//#include <Wire.h>  What is Wire.h used for?
+//#include <Wire.h>  //What is Wire.h used for?
 #include <RH_RF69.h>
 #include <RHReliableDatagram.h>
 #include <Adafruit_GFX.h>
@@ -7,7 +7,7 @@
 #include <RTClib.h>
 
 //Radio
-  #define RF69_FREQ     915.0
+  #define RF69_FREQ     915
   #define MY_ADDRESS    10
   #define RFM69_CS      8
   #define RFM69_INT     7
@@ -40,24 +40,34 @@
   #define SERIAL_BAUD   115200
 
 
-int hh; int mm; int ss;
-int hh1On=0;  int hh1Off; int mm1On;  int mm1Off; int dur1;
-int hh2On=0;  int hh2Off; int mm2On;  int mm2Off; int dur2;
-int hh3On=0;  int hh3Off; int mm3On;  int mm3Off; int dur3;
-int hh4On=0;  int hh4Off; int mm4On;  int mm4Off; int dur4;
-int hh5On=0;  int hh5Off; int mm5On;  int mm5Off; int dur5;
-int hh6On=0;  int hh6Off; int mm6On;  int mm6Off; int dur6;
+int hh; int mm; //int ss;
+int hh1_ON=0;  int hh1_OFF; int mm1_ON;  int mm1_OFF; int dur1;
+int hh2_ON=0;  int hh2_OFF; int mm2_ON;  int mm2_OFF; int dur2;
+int hh3_ON=0;  int hh3_OFF; int mm3_ON;  int mm3_OFF; int dur3;
+int hh4_ON=0;  int hh4_OFF; int mm4_ON;  int mm4_OFF; int dur4;
+int hh5_ON=0;  int hh5_OFF; int mm5_ON;  int mm5_OFF; int dur5;
+int hh6_ON=0;  int hh6_OFF; int mm6_ON;  int mm6_OFF; int dur6;
 
 //int incomingByte;      // a variable to read incoming serial data into
 //int16_t packetnum = 0;  // packet counter, increment per xmission
+//int counter = 0;
 
 //*****************************************************************************
 
 void setup() {
  
   Serial.begin(SERIAL_BAUD);
-  delay(1000);
-  Serial.println("Feather RFM69HCW Receiver");
+  delay(1500);
+  Serial.println(F("Feather RFM69HCW Receiver"));
+
+  pinMode(LightDemoButton, INPUT);
+  pinMode(DisplayLED1, OUTPUT);
+  pinMode(DisplayLED2, OUTPUT);
+  pinMode(DisplayLED3, OUTPUT);
+  pinMode(DisplayLED4, OUTPUT);
+  pinMode(DisplayLED5, OUTPUT);
+  pinMode(DisplayLED6, OUTPUT);
+
 
   pinMode(LED, OUTPUT);
   pinMode(RFM69_RST, OUTPUT);
@@ -70,14 +80,14 @@ void setup() {
   delay(10);
 
   if (!rf69_manager.init()) {
-    Serial.println("RFM69 radio init failed");
+    Serial.println(F("RFM69 radio init failed"));
     while (1);
   }
-  Serial.println("RFM69 radio init OK!");
+  Serial.println(F("RFM69 radio init OK!"));
   // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM (for low power module)
   // No encryption
   if (!rf69.setFrequency(RF69_FREQ)) {
-    Serial.println("setFrequency failed");
+    Serial.println(F("setFrequency failed"));
   }
 
   // If you are using a high power RF69 eg RFM69HW, you *must* set a Tx power with the
@@ -90,13 +100,7 @@ void setup() {
   rf69.setEncryptionKey(key);
 
   
-  pinMode(LightDemoButton, INPUT);
-  pinMode(DisplayLED1, OUTPUT);
-  pinMode(DisplayLED2, OUTPUT);
-  pinMode(DisplayLED3, OUTPUT);
-  pinMode(DisplayLED4, OUTPUT);
-  pinMode(DisplayLED5, OUTPUT);
-  pinMode(DisplayLED6, OUTPUT);
+
 
   
   display.setTextColor(1);
@@ -106,10 +110,10 @@ void setup() {
   display.clearDisplay();
   display.display();
 
-  Serial.print("RFM69 radio @");  Serial.print((int)RF69_FREQ);  Serial.println(" MHz");
+  Serial.print(F("RFM69 radio @"));  Serial.print((int)RF69_FREQ);  Serial.println(F(" MHz"));
   
   StartUpLightShow();
-  Serial.println("End of Setup()");
+  
 }
 
 // Dont put this on the stack:
@@ -117,11 +121,12 @@ uint8_t data[] = "And hello back to you";
 // Dont put this on the stack:
 uint8_t buf[RH_RF69_MAX_MESSAGE_LEN];
 uint8_t from;
-uint8_t NodeID; //stores 'from' ID for use after the recieve response erases from
                
 //*****************************************************************************
 
 void loop() {
+    //Serial.print(F("Iteration #")); Serial.println(counter);      
+      
   DateTime now = rtc.now(); 
    //ADJUST TIME VARIABLES FOR 12-HR MODE
     
@@ -136,197 +141,342 @@ void loop() {
    //minutes
      mm = now.minute(); 
    //seconds
-     ss = now.second();
-Serial.println("adjust time variables");      
+     //ss = now.second();  
 
-
-  if (rf69_manager.available()) {
-    // Wait for a message addressed to us from the client
-    uint8_t len = sizeof(buf);
-    uint8_t from; NodeID = from;
-    Serial.println("Message available");
-    
-    if (rf69_manager.recvfromAck(buf, &len, &from)) {
-      buf[len] = 0; // zero out remaining string
-      
-      Serial.print("Got packet from #"); Serial.print(from);
-      //Serial.print(" [RSSI :");
-      //Serial.print(rf69.lastRssi());
-      Serial.print(" : ");
-      Serial.println((char*)buf);
-      Blink(LED, 40, 3); //blink LED 3 times, 40ms between blinks
-
-      // Send a reply back to the originator client
-      if (!rf69_manager.sendtoWait(data, sizeof(data), from)){
-        Serial.println("Sending failed (no ack)");}
-    }
-  
-    //check if received message contains ON, if yes turn on Front LED # corresponding to the Sender ID
-      if (strstr((char*)buf, "ON")) {
-        switch (NodeID) {
-          case 1: digitalWrite(DisplayLED1, LOW);
-            hh1On = hh; mm1On = now.minute(); break;
-          case 2: digitalWrite(DisplayLED2, LOW);
-            hh2On = hh; mm2On = now.minute(); break;
-          case 3: digitalWrite(DisplayLED3, LOW); 
-            hh3On = hh; mm3On = now.minute(); break;
-          case 4: digitalWrite(DisplayLED4, LOW);
-            hh4On = hh; mm4On = now.minute(); break;
-          case 5: digitalWrite(DisplayLED5, LOW); 
-            hh5On = hh; mm5On = now.minute(); break;
-          case 6: digitalWrite(DisplayLED6, LOW); 
-            hh6On = hh; mm6On = now.minute(); break;
-         }
-      }
-      if (strstr((char*)buf, "OFF")) {
-         switch (NodeID) {
-          case 1: digitalWrite(DisplayLED1, HIGH);
-            hh1Off = hh; mm1Off = now.minute(); break;
-          case 2: digitalWrite(DisplayLED2, HIGH);
-            hh2Off = hh; mm2Off = now.minute(); break;
-          case 3: digitalWrite(DisplayLED3, HIGH); 
-            hh3Off = hh; mm3Off = now.minute(); break;
-          case 4: digitalWrite(DisplayLED4, HIGH);
-            hh4Off = hh; mm4Off = now.minute(); break;
-          case 5: digitalWrite(DisplayLED5, HIGH); 
-            hh5Off = hh; mm5Off = now.minute(); break;
-          case 6: digitalWrite(DisplayLED6, HIGH); 
-            hh6Off = hh; mm6Off = now.minute(); break;
-         }  
-      }
-  
-  }
-      //******End Radio code***********************      
+      Serial.println(F("RTC Updated..."));
+ //****************************************
 
     display.clearDisplay();
-    
+    Serial.print(F("Display: Clear..."));
    //DISPLAY CLOCK IN UPPER RIGHT CORNER  
-      display.setCursor(80,0);
+      if (hh > 10) {
+        display.setCursor(98,0);
+        display.drawLine(95,0,95,9,1);display.drawLine(95,9,127,9,1);
+      }
+      else {
+        display.setCursor(104,0);
+        display.drawLine(101,0,101,9,1);display.drawLine(101,9,127,9,1);
+      }
       display.print(hh);
-      display.print(":"); 
+      display.print(F(":")); 
       displayLZ(mm);
-      display.print(":");
-      displayLZ(ss);
+      //display.print(F(":"));
+      //displayLZ(ss);
       //border line
         //display.drawLine(92,0,92,9,1);display.drawLine(92,9,127,9,1);
         //display.drawRect(92,0,36,13,1); 
  
-
+     Serial.print(F("Clock..."));
    //DISPLAY SCHEDULED FLOAT TIME IN UPPER LEFT CORNER
   display.setCursor(0,0);
   switch (now.hour()) {   
-    case 7: case 8: display.println("7AM-9:30AM"); 
+    case 7: case 8: display.println(F("7AM-9:30AM")); 
       break;
-    case 9:  case 10: display.println("9AM-10:30AM"); 
+    case 9:  case 10: display.println(F("9AM-10:30AM")); 
       break;
-    case 11: case 12: display.println("11AM-12:30PM"); 
+    case 11: case 12: display.println(F("11AM-12:30PM")); 
       break;
-    case 13: case 14: display.println("1PM-2:30PM"); 
+    case 13: case 14: display.println(F("1PM-2:30PM")); 
       break;  
-    case 15: case 16: display.println("3PM-4:30PM"); 
+    case 15: case 16: display.println(F("3PM-4:30PM")); 
       break;
-    case 17: case 18: display.println("5PM-6:30PM"); 
+    case 17: case 18: display.println(F("5PM-6:30PM")); 
       break;
-    case 19: case 20: display.println("7PM-8:30PM"); 
+    case 19: case 20: display.println(F("7PM-8:30PM")); 
       break;  
-    case 21: case 22: display.println("9PM-10:30PM"); 
+    case 21: case 22: display.println(F("9PM-10:30PM")); 
       break;
-    case 23: case 0: case 1: display.println("11PM-1:30AM"); 
+    case 23: case 0: case 1: display.println(F("11PM-1:30AM")); 
       break;
-    case 2: case 3: case 4: display.println("2AM-4:30AM"); 
+    case 2: case 3: case 4: display.println(F("2AM-4:30AM")); 
       break;
     default: display.println();
       break;      
    }
   
+  Serial.print(F("Schedule..."));
    
    //DISPLAY INDIVIDUAL LINES WITH TIMES AND DURATIONS
    
-   dur1 = mm1Off - mm1On;   if (dur1 < 0) dur1 = dur1 + 60;
-   dur2 = mm2Off - mm2On;   if (dur2 < 0) dur2 = dur2 + 60;  
-   dur3 = mm3Off - mm3On;   if (dur3 < 0) dur3 = dur3 + 60;
-   dur4 = mm4Off - mm4On;   if (dur4 < 0) dur4 = dur4 + 60;
-   dur5 = mm5Off - mm5On;   if (dur5 < 0) dur5 = dur5 + 60;
-   dur6 = mm6Off - mm6On;   if (dur6 < 0) dur6 = dur6 + 60;
 
+    
     display.setCursor(0,16);
-    display.print("1. "); 
-      if (hh1On > 0) {
-        display.print(hh1On); display.print(":"); displayLZ(mm1On);display.print("-");display.print(hh1Off);display.print(":");displayLZ(mm1Off);
-        display.print(" (");display.print(dur1);display.println("m)");
+    display.print(F("1. ")); 
+      if (hh1_ON > 0) {
+        display.print(hh1_ON); display.print(F(":")); displayLZ(mm1_ON);
+        if (hh1_OFF > 0) {
+          display.print(F("-"));display.print(hh1_OFF);display.print(F(":"));displayLZ(mm1_OFF);
+          display.print(F(" ("));display.print(dur1);display.print(F("m)"));
+        }
       }
-      else {
-        display.println();
-      }
+      display.println();  
+//Serial.print(1);
       
-    display.print("2. "); 
-     if (hh2On > 0) {
-        display.print(hh2On); display.print(":");displayLZ(mm2On);display.print("-");display.print(hh2Off);display.print(":");displayLZ(mm2Off);
-        display.print(" (");display.print(dur2);display.println("m)");
+    display.print(F("2. ")); 
+     if (hh2_ON > 0) {
+        display.print(hh2_ON); display.print(F(":"));displayLZ(mm2_ON);
+        if (hh2_OFF > 0) {
+          display.print(F("-"));display.print(hh2_OFF);display.print(F(":"));displayLZ(mm2_OFF);
+          display.print(F(" ("));display.print(dur2);display.print(F("m)"));
+        }     
      }
-     else {
+     display.println();
+     //Serial.print(2);
+      
+    display.print(F("3. ")); 
+      if (hh3_ON > 0) {
+        display.print(hh3_ON); display.print(F(":"));displayLZ(mm3_ON);
+        if (hh3_OFF >0) {
+          display.print(F("-"));display.print(hh3_OFF);display.print(F(":"));displayLZ(mm3_OFF);
+          display.print(F(" ("));display.print(dur3);display.print(F("m)")); 
+        }
+      }
       display.println();
-     }
-      
-    display.print("3. "); 
-      if (hh3On > 0) {
-        display.print(hh3On); display.print(":");displayLZ(mm3On);display.print("-");display.print(hh3Off);display.print(":");displayLZ(mm3Off);
-        display.print(" (");display.print(dur3);display.println("m)"); 
-      }
-      else {
-        display.println();
-      }
+      //Serial.print(3);
 
-    display.print("4. "); 
-      if (hh4On > 0) {
-        display.print(hh4On); display.print(":");displayLZ(mm4On);display.print("-");display.print(hh4Off);display.print(":");displayLZ(mm4Off);
-        display.print(" (");display.print(dur4);display.println("m)"); 
+    display.print(F("4. ")); 
+      if (hh4_ON > 0) {
+        display.print(hh4_ON); display.print(F(":"));displayLZ(mm4_ON);
+        if (hh4_OFF > 0) {
+          display.print(F("-"));display.print(hh4_OFF);display.print(F(":"));displayLZ(mm4_OFF);
+          display.print(F(" ("));display.print(dur4);display.print(F("m)")); 
+        }
       }
-      else { 
-        display.println();
+      display.println();
+      //Serial.print(4);
+      
+    display.print(F("5. ")); 
+      if (hh5_ON > 0) {
+        display.print(hh5_ON); display.print(F(":"));displayLZ(mm5_ON);
+        if (hh5_OFF > 0) {
+          display.print(F("-"));display.print(hh5_OFF);display.print(F(":"));displayLZ(mm5_OFF);
+          display.print(F(" ("));display.print(dur5);display.print(F("m)")); 
+        }      
       }
-    
-    display.print("5. "); 
-      if (hh5On > 0) {
-        display.print(hh5On); display.print(":");displayLZ(mm5On);display.print("-");display.print(hh5Off);display.print(":");displayLZ(mm5Off);
-        display.print(" (");display.print(dur5);display.println("m)"); 
-      }  
-      else {
-        display.println(); 
+      display.println();
+      //Serial.print(5);
+     
+    display.print(F("6. ")); 
+      if (hh6_ON > 0) {
+        display.print(hh6_ON); display.print(F(":"));displayLZ(mm6_ON);
+        if (hh6_OFF > 0) {
+          display.print(F("-"));display.print(hh6_OFF);display.print(F(":"));displayLZ(mm6_OFF);
+          display.print(F(" ("));display.print(dur6);display.print(F("m)"));
+        }
       }
-    
-    display.print("6. "); 
-      if (hh6On > 0) {
-        display.print(hh6On); display.print(":");displayLZ(mm6On);display.print("-");display.print(hh6Off);display.print(":");displayLZ(mm6Off);
-        display.print(" (");display.print(dur6);display.println("m)");
-      }
-      else {
-        display.println();
-      }
-   
+      display.println();
+      //Serial.print(6);
 
   display.display();
-  Serial.println("display printed");
-  delay(100);
+  delay(1000);
+      //Serial.println(F("...Display Updated..."));
+  //*********************************************
+  
+  
+  
+    if (rf69_manager.available()) {
+    // Wait for a message addressed to us from the client
+    uint8_t len = sizeof(buf);
+    uint8_t from;
+//Serial.print(F("Message Available..."));
+
+     
+    if (rf69_manager.recvfromAck(buf, &len, &from)) {
+      buf[len] = 0; // zero out remaining string
+      
+      Serial.print(F("Got packet from #")); Serial.print(from);
+      //Serial.print(F(" [RSSI :"));
+      //Serial.print(rf69.lastRssi());
+      Serial.print(F(" : "));
+      Serial.println((char*)buf);
+     //Blink(LED, 40, 3); //blink LED 3 times, 40ms between blinks
+
+      //check received message sender ID, if and turn ON or OFF corresponding Front LED. Also store time info.
+   
+      if (from == 1) {
+          if (strstr((char*)buf, "ON")) {
+              digitalWrite(DisplayLED1,LOW);
+              hh1_ON = hh; mm1_ON = now.minute();
+          }
+          if (strstr((char*)buf, "OFF")) {
+              hh1_OFF = hh; mm1_OFF = now.minute();
+          }
+      }  
+    
+      if (from == 2) {
+          if (strstr((char*)buf, "ON")) {
+              digitalWrite(DisplayLED2,LOW);
+              hh2_ON = hh; mm2_ON = now.minute();
+          }
+          if (strstr((char*)buf, "OFF")) {
+              hh2_OFF = hh; mm2_OFF = now.minute();
+          }
+      }
+
+      if (from == 3) {
+          if (strstr((char*)buf, "ON")) {
+              digitalWrite(DisplayLED3,LOW);
+              hh3_ON = hh; mm3_ON = now.minute();
+          }
+          if (strstr((char*)buf, "OFF")) {
+              hh3_OFF = hh; mm3_OFF = now.minute();
+          }
+      }
+      
+      if (from == 4) {
+          if (strstr((char*)buf, "ON")) {
+              digitalWrite(DisplayLED4,LOW);
+              hh4_ON = hh; mm4_ON = now.minute();
+          }
+          if (strstr((char*)buf, "OFF")) {           
+              hh4_OFF = hh; mm4_OFF = now.minute();
+          }
+      }
+
+
+     if (from == 5) {
+          if (strstr((char*)buf, "ON")) {
+              digitalWrite(DisplayLED5,LOW);
+              hh5_ON = hh; mm5_ON = now.minute();
+          }
+          if (strstr((char*)buf, "OFF")) {           
+              hh5_OFF = hh; mm5_OFF = now.minute();
+          }
+      }
+
+
+      if (from == 6) {
+          if (strstr((char*)buf, "ON")) {
+              digitalWrite(DisplayLED6,LOW);
+              hh6_ON = hh; mm6_ON = now.minute();
+          }
+          if (strstr((char*)buf, "OFF")) {
+              hh6_OFF = hh; mm6_OFF = now.minute();
+          }
+      }
+
+      // Send a reply back to the originator client
+      if (!rf69_manager.sendtoWait(data, sizeof(data), from)){
+        Serial.println(F("Sending failed (no ack)"));
+      }
+    
+    
+    }
+  
+   dur1 = mm1_OFF - mm1_ON;   if (dur1 < 0) dur1 = dur1 + 60;
+   dur2 = mm2_OFF - mm2_ON;   if (dur2 < 0) dur2 = dur2 + 60;  
+   dur3 = mm3_OFF - mm3_ON;   if (dur3 < 0) dur3 = dur3 + 60;
+   dur4 = mm4_OFF - mm4_ON;   if (dur4 < 0) dur4 = dur4 + 60;
+   dur5 = mm5_OFF - mm5_ON;   if (dur5 < 0) dur5 = dur5 + 60;
+   dur6 = mm6_OFF - mm6_ON;   if (dur6 < 0) dur6 = dur6 + 60;
+  Serial.print(F("Duration Calculations..."));
+      
+  }
+         /*
+         switch (from) {
+          case 1: digitalWrite(DisplayLED1, HIGH); break;
+            //hh1_OFF = hh; mm1_OFF = now.minute(); break;
+          case 2: digitalWrite(DisplayLED2, HIGH); break;
+            //hh2_OFF = hh; mm2_OFF = now.minute(); break;
+          case 3: digitalWrite(DisplayLED3, HIGH);  break;
+            //hh3_OFF = hh; mm3_OFF = now.minute(); break;
+          case 4: digitalWrite(DisplayLED4, HIGH); break;
+            //hh4_OFF = hh; mm4_OFF = now.minute(); break;
+          case 5: digitalWrite(DisplayLED5, HIGH);  break;
+            //hh5_OFF = hh; mm5_OFF = now.minute(); break;
+          case 6: digitalWrite(DisplayLED6, HIGH);  break;
+            //hh6_OFF = hh; mm6_OFF = now.minute(); break;
+          default: Serial.println(F("bad nodeid from off")); break;
+          } 
+
+         
+        switch (from) {
+          case 1: digitalWrite(DisplayLED1, LOW);  break;
+           // hh1_ON = hh; mm1_ON = now.minute(); break;
+          case 2: digitalWrite(DisplayLED2, LOW); break;
+            //hh2_ON = hh; mm2_ON = now.minute(); break;
+          case 3: digitalWrite(DisplayLED3, LOW);  break;
+            //hh3_ON = hh; mm3_ON = now.minute(); break;
+          case 4: digitalWrite(DisplayLED4, LOW); break;
+            //hh4_ON = hh; mm4_ON = now.minute(); break;
+          case 5: digitalWrite(DisplayLED5, LOW);  break;
+            //hh5_ON = hh; mm5_ON = now.minute(); break;
+          case 6: digitalWrite(DisplayLED6, LOW);  break;
+            //hh6_ON = hh; mm6_ON = now.minute(); break;
+          default: Serial.println(F("bad nodeid from on")); break;
+          }  
+          */
+  
+//Serial.println(F("Finished radio loop."));
+Serial.println();
+      //******End Radio code***********************     
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  //delay(250);
+  //counter = counter + 1;
   
   //button press triggers light show
   if (digitalRead(LightDemoButton) == HIGH) {
-    Serial.println("Wipe OUT!");
-    hh1On=0;
-    hh2On=0;
-    hh3On=0;
-    hh4On=0;
-    hh5On=0;
-    hh6On=0;
+    Serial.println(F("Wipe OUT!"));
+    hh1_ON=0; hh1_OFF=0;
+    hh2_ON=0; hh2_OFF=0;
+    hh3_ON=0; hh3_OFF=0;
+    hh4_ON=0; hh4_OFF=0;
+    hh5_ON=0; hh5_OFF=0;
+    hh6_ON=0; hh6_OFF=0; 
+    digitalWrite(DisplayLED1, HIGH); digitalWrite(DisplayLED2, HIGH); digitalWrite(DisplayLED3, HIGH);
+    digitalWrite(DisplayLED4, HIGH); digitalWrite(DisplayLED5, HIGH); digitalWrite(DisplayLED6, HIGH);
+
+    
   }
 }
+
+
+
+
+/*
+  case 7: case 8: display.println(F("7AM-9:30AM"));   
+      break;
+    case 9:  case 10: display.println(F("9AM-10:30AM")); 
+      break;
+    case 11: case 12: display.println(F("11AM-12:30PM")); 
+      break;
+    case 13: case 14: display.println(F("1PM-2:30PM")); 
+      break;  
+    case 15: case 16: display.println(F("3PM-4:30PM")); 
+      break;
+    case 17: case 18: display.println(F("5PM-6:30PM")); 
+      break;
+    case 19: case 20: display.println(F("7PM-8:30PM")); 
+      break;  
+    case 21: case 22: display.println(F("9PM-10:30PM")); 
+      break;
+    case 23: case 0: case 1: display.println(F("11PM-1:30AM")); 
+      break;
+    case 2: case 3: case 4: display.println(F("2AM-4:30AM")); 
+
+*/
+
+
+
 
 //**************** SUBFUNCTIONS *************************************************************
 
 void displayLZ(int zMin) //adds a leading zero if needed to fill up two spaces
 {
     if (zMin < 10) {
-      display.print("0");
+      display.print(F("0"));
       display.print(zMin);
     }
     else {
