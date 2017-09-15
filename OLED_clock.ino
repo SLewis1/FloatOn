@@ -76,7 +76,7 @@ void loop() {
 display.display();
 delay(100);
 display.clearDisplay();
-
+// line going across for seconds
 //if (now.second() > 1) {
 //    display.fillRect(0,30,2.16*now.second()-2,2,1);
 //    Serial.print("  ");Serial.println(2*now.second());
