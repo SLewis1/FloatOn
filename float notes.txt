@@ -21,7 +21,7 @@ want to record the shower on time, and duration
 
 display will clear at 5:30 and look for new shower data
 
-transmit every 30seconds 
+transmit when sensor state change
 
 have 12 batteries
 6 radios + 1 with sd card
