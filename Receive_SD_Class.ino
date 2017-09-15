@@ -10,12 +10,18 @@
 #include <clockType.h>
 clockType room[6];
 
-//#define OLEDdebug
-//#define SDdebug
-#define SDdebugHeader
-#define SDdebug1  //init card
-//#define SDdebug2  //button
-#define SDdebug3  //subfunctions
+
+  //#define SDd
+
+  #define OLEDdebugHeader
+  #define OLEDdebugSetup
+  #define OLEDdebugClockSch
+  #define OLEDdebugLines
+  #define OLEDdebugDisplay
+  #define OLEDdebugLZ
+
+//  #define BUTTON
+
 
 //Radio
   #define RF69_FREQ     915.0
@@ -28,19 +34,22 @@ clockType room[6];
   RHReliableDatagram rf69_manager(rf69, MY_ADDRESS);
 
 //OLED
-  #ifdef OLEDdebug
+  #ifdef OLEDdebugHeader
   #define OLED_CS 6 
   #define OLED_RESET 9
   #define OLED_DC 5
+
+  //#define OLED_CLK 13
+  //#define OLED_MOSI 11
   Adafruit_SSD1325 display(OLED_DC, OLED_RESET, OLED_CS);
-  #endif
+  #endif //OLEDdebugHeader
+
 //RTC
   RTC_PCF8523 rtc;
 
+#ifdef SDd
 //SD
-#ifdef SDdebugHeader
   SdCard card;
- 
   Fat16 file;
 
   char name[] = "Shower00.CSV";
@@ -66,10 +75,11 @@ clockType room[6];
     } while (n);
     file.write(&buf[sizeof(buf) - i], i); // write the part of buf with the number
   }
-#endif //SDdebug
-  
+#endif //SDd
+
+
 //Front LEDs
-  //                 n/a  A0, A1, A2, A3, A4, A5
+  //               n/a  A0, A1, A2, A3, A4, A5
 int DisplayLED[ ] = {0, 18, 19, 20, 21, 22, 23};
 
 //Temp Button for resetting the display and clearing stored time values
@@ -110,13 +120,12 @@ void setup() {
     while (1);
   }
   //Serial.println(F("RFM69 radio init OK!"));
-  // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM (for low power module)
   // No encryption
   if (!rf69.setFrequency(RF69_FREQ)) {
     Serial.println(F("setFrequency failed"));
   }
 
-  rf69.setTxPower(20, true);  // range from 14-20 for power, 2nd arg must be true for 69HCW
+  rf69.setTxPower(17, true);  // range from 14-20 for power, 2nd arg must be true for 69HCW
 
   // The encryption key has to be the same as the one in the server
   uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -124,7 +133,7 @@ void setup() {
   rf69.setEncryptionKey(key);
   Serial.print(F("RFM69 radio @"));  Serial.print((int)RF69_FREQ);  Serial.println(F(" MHz"));
 
-#ifdef SDdebug1
+#ifdef SDd
   // initialize the SD card
   if (!card.begin(10)) 
   {
@@ -156,11 +165,9 @@ void setup() {
     Serial.println("Error opening SD file");
     return;
   }
-  
-#endif 
+#endif //SDd
 
-
-#ifdef OLEDdebug
+#ifdef OLEDdebugSetup
   display.setTextColor(1);
   display.setTextSize(1);
   display.setTextWrap(false);
@@ -168,7 +175,7 @@ void setup() {
   display.clearDisplay();
   display.display();
   Serial.println("Display ready");
-#endif
+#endif //OLEDdebugSetup
 
   for (int k=1;k<=6;k++)
   {
@@ -205,7 +212,7 @@ void loop() {
 
       //Serial.println(F("RTC Updated..."));
  //****************************************
-#ifdef OLEDdebug
+#ifdef OLEDdebugClockSch
     display.clearDisplay();
    //DISPLAY CLOCK IN UPPER RIGHT CORNER  
       if (hh >= 10) {
@@ -254,9 +261,9 @@ void loop() {
     default: display.println();
       break;      
    }
+  #endif //OLEDdebugClockSch
   
-  
-   
+ #ifdef OLEDdebugLines  
    //DISPLAY INDIVIDUAL LINES WITH TIMES AND DURATIONS 
     display.setCursor(0,16);
    
@@ -272,13 +279,13 @@ void loop() {
       }
       display.println();   
     }
-#endif  //OLEDdebug
+#endif  //OLEDdebugLines
 
       //Serial.println(F("...Display Updated..."));
   //*********************************************
 
 //Times that the display clears and resets for next floats                               
-   
+#ifdef SDd   
    if ((now.hour()==8  && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //8 am     (7-8:30)    
        (now.hour()==10 && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //10 am    (9-10:30)
        (now.hour()==12 && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //12 pm    (11-12:30) 
@@ -308,59 +315,51 @@ void loop() {
        
    {
     delay(4000);
-    //SDlogAfterFloat();
+    SDlogAfterFloat();
     ResetAll();    
    }
+#endif //SDd
 
-
+   if ((now.hour()>=8  && now.hour()<9)  ||
+       (now.hour()>=10 && now.hour()<11) ||
+       (now.hour()>=12 && now.hour()<13) ||
+       (now.hour()>=14 && now.hour()<15) ||
+       (now.hour()>=16 && now.hour()<17) ||
+       (now.hour()>=18 && now.hour()<19) ||
+       (now.hour()>=20 && now.hour()<21) ||
+       (now.hour()>=22 && now.hour()<23) ||
+       (now.hour()>=1  && now.hour()<2)  ||
+       (now.hour()>=4  && now.hour()<5)   )
+    {
+       ActiveDisplayWindow = true;
+    }
+    else 
+    {
+       ActiveDisplayWindow = false;
+    }
     
  
 
 
 
    
-
-//   if ((now.hour()>=8  && now.hour()<9)  ||
-//       (now.hour()>=10 && now.hour()<11) ||
-//       (now.hour()>=12 && now.hour()<13) ||
-//       (now.hour()>=14 && now.hour()<15) ||
-//       (now.hour()>=16 && now.hour()<17) ||
-//       (now.hour()>=18 && now.hour()<19) ||
-//       (now.hour()>=20 && now.hour()<21) ||
-//       (now.hour()>=22 && now.hour()<23) ||
-//       (now.hour()>=1  && now.hour()<2)  ||
-//       (now.hour()>=4  && now.hour()<5)   )
-//    {
-//       ActiveDisplayWindow = true;
-//    }
-//    else 
-//    {
-//       ActiveDisplayWindow = true;
-//    }
-
+#ifdef BUTTON
   if (digitalRead(ButtonInput) == HIGH)   //kk
   {
     Serial.print("Button Pushed...");
     delay(1500);
-//    #ifdef SDdebug2  bbb
     SDlogBeforeFloat();
     SDlogAfterFloat();
-//    #endif
     ResetAll();
     //ActiveMinuteCounter = ActiveMinuteCounter + 60;
   }
+#endif
     
-    
-
-    
-  
-
-#ifdef OLEDdebug
+#ifdef OLEDdebugDisplay
   display.display();
   delay(1000);
-#endif
+#endif //OLEDdebugDisplay
 
-//Serial.println(F("radio check"));
     if (rf69_manager.available()) {
     // Wait for a message addressed to us from the client
     uint8_t len = sizeof(buf);
@@ -378,16 +377,29 @@ void loop() {
       //check received message sender ID, if and turn ON or OFF corresponding Front LED. Also store time info.
        if ( 1 <= from && from <=6)
        {
-          if (strstr((char*)buf, "ON")) {
-            digitalWrite(DisplayLED[from],LOW);
+          //  Always log. Before float lights go on and off with shower. After float lights go on and stay on until reset later.
+          if (strstr((char*)buf, "ON")) 
+          {
+            if (strstr((char*)buf, "LBat")) 
+            {
+              Blink(DisplayLED[from], 200, 8); //blink LED 8 times, 40ms between blinks
+              //Serial.println("blink time!");
+            }
+            digitalWrite(DisplayLED[from],LOW); 
             room[from].setTimeON(now.hour(),now.minute());
-            room[from].printTimeON();
+            room[from].printTimeON(); 
           }
+          
           if (strstr((char*)buf, "OFF")) {
+            if (!ActiveDisplayWindow)
+            {
+             digitalWrite(DisplayLED[from],HIGH); 
+            }
             room[from].setTimeOFF(now.hour(),now.minute());
             room[from].printTimeOFF();
           }
-       }
+     
+
        // Send a reply back to the originator client
        if (!rf69_manager.sendtoWait(data, sizeof(data), from)){
          Serial.println(F("Sending failed (no ack)"));
@@ -396,20 +408,20 @@ void loop() {
         
   }  
 
-
-//Serial CLOCK  
-//      DateTime now = rtc.now();
-      Serial.print(now.hour());
-      Serial.print(F(":")); 
-      Serial.print(now.minute());
-      Serial.print(F(":")); 
-      Serial.print(now.second());
-      if (now.hour() >=12) {
-        Serial.println("PM");
-      }
-      else {
-        Serial.println("AM");
-      }
+//
+////Serial CLOCK  
+////      DateTime now = rtc.now();
+//      Serial.print(now.hour());
+//      Serial.print(F(":")); 
+//      Serial.print(now.minute());
+//      Serial.print(F(":")); 
+//      Serial.print(now.second());
+//      if (now.hour() >=12) {
+//        Serial.println("PM");
+//      }
+//      else {
+//        Serial.println("AM");
+//      }
    
 
 
@@ -418,9 +430,9 @@ void loop() {
 
 
      
-delay(1000);  //End Loop
+  delay(1000);  //End Loop
+  }
 }
-
 
 
 //**************** SUBFUNCTIONS *************************************************************
@@ -429,8 +441,8 @@ void ResetAll()
 {
     for (int i=1;i<=6;i++)
     {
-      room[i].setTimeON(-1,-1);
-      room[i].setTimeOFF(-1,-1);
+      room[i].setTimeON(-1,0);
+      room[i].setTimeOFF(-1,0);
     }
     //all off
     for (int l=1;l<=6;l++) { digitalWrite(DisplayLED[l],HIGH); }
@@ -439,7 +451,7 @@ void ResetAll()
 
 void StartUpLightShow()
 {
-  int delayTime = 70;
+  int delayTime = 150;
   //all off
   for (int l=1;l<=6;l++) { digitalWrite(DisplayLED[l],HIGH); }
  
@@ -463,7 +475,7 @@ void StartUpLightShow()
   for (int l=1;l<=6;l++) { digitalWrite(DisplayLED[l],HIGH); }
 }
 
-#ifdef OLEDdebug
+#ifdef OLEDdebugLZ
 void displayLZ(int zMin) //adds a leading zero if needed to fill up two spaces
 {
     if (zMin < 10) {
@@ -474,9 +486,9 @@ void displayLZ(int zMin) //adds a leading zero if needed to fill up two spaces
       display.print(zMin);
     }
 }
-#endif
+#endif //OLEDdebugLZ
 
-#ifdef SDdebug3
+#ifdef SDd
 void sdLZ(int zMin) //adds a leading zero if needed to fill up two spaces
 {
     if (zMin < 10) {
@@ -487,6 +499,7 @@ void sdLZ(int zMin) //adds a leading zero if needed to fill up two spaces
       file.print(zMin);
     }
 }
+
 
 void SDlogBeforeFloat()
 {
@@ -612,4 +625,15 @@ void comma4()
 {
   file.print(",,,,");
 }
-#endif //SDdebug
+#endif //SDd
+
+void Blink(byte PIN, byte DELAY_MS, byte loops)
+{
+  for (byte i=0; i<loops; i++)
+  {
+    digitalWrite(PIN,LOW);
+    delay(DELAY_MS);
+    digitalWrite(PIN,HIGH);
+    delay(DELAY_MS);
+  }
+}
