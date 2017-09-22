@@ -11,14 +11,18 @@
 clockType room[6];
 
 
-  //#define SDd
+#define SDd
+//#define OLEDd
+  
 
+#ifdef OLEDd
   #define OLEDdebugHeader
   #define OLEDdebugSetup
   #define OLEDdebugClockSch
   #define OLEDdebugLines
   #define OLEDdebugDisplay
   #define OLEDdebugLZ
+#endif //OLEDd
 
 //  #define BUTTON
 
@@ -380,10 +384,19 @@ void loop() {
           //  Always log. Before float lights go on and off with shower. After float lights go on and stay on until reset later.
           if (strstr((char*)buf, "ON")) 
           {
-            if (strstr((char*)buf, "LBat")) 
+            if (ActiveDisplayWindow)
             {
-              Blink(DisplayLED[from], 200, 8); //blink LED 8 times, 40ms between blinks
-              //Serial.println("blink time!");
+             if (strstr((char*)buf, "LBat")) 
+              {
+                Blink(DisplayLED[from], 2000, 30); //blink LED for 2 minutes LOW BATTERY WARNING
+              }
+            }
+            else
+            {
+              if (strstr((char*)buf, "LBat")) 
+              {
+                Blink(DisplayLED[from], 2000, 8); //blink LED for 32 seconds LOW BATTERY WARNING
+              }
             }
             digitalWrite(DisplayLED[from],LOW); 
             room[from].setTimeON(now.hour(),now.minute());
@@ -627,7 +640,7 @@ void comma4()
 }
 #endif //SDd
 
-void Blink(byte PIN, byte DELAY_MS, byte loops)
+void Blink(byte PIN, int DELAY_MS, int loops)
 {
   for (byte i=0; i<loops; i++)
   {
