@@ -2,6 +2,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1325.h>
 #include "RTClib.h"
+#include <Wire.h>
 RTC_PCF8523 rtc;
 
 #define OLED_CS 6 //was 10
@@ -10,8 +11,11 @@ RTC_PCF8523 rtc;
 
 Adafruit_SSD1325 display(OLED_DC, OLED_RESET, OLED_CS);
 
-int textSize = 5;
+int textSize = 4;
 int sec = 0;
+int across = 0;
+
+//#define seconds
 
 void setup() {
 //  Serial.begin(9600);
@@ -25,16 +29,13 @@ void setup() {
   display.begin(); 
   display.clearDisplay();
   display.display();
+  
 }
 
 void loop() {
   
   DateTime now = rtc.now();
   Serial.print(now.hour(),DEC); Serial.print(":"); Serial.print(now.minute(),DEC); Serial.print(":"); Serial.println(now.second(),DEC);
-
-
-
-  
   display.setCursor(0,0);
 //hours
   if (now.hour() > 12) {
@@ -65,6 +66,7 @@ void loop() {
  //display.display();
 
 //seconds
+#ifdef seconds
   display.setTextSize(1);
   display.setCursor(115,55);
   if (now.second() < 10) {
@@ -72,26 +74,29 @@ void loop() {
   }
   display.println(now.second());
   display.setTextSize(textSize);
+#endif //seconds
+
+//line going across
+//Serial.print("  ");Serial.println(2*now.second());
+//Serial.print("  ");Serial.println(across);
+if (now.second() > 0) {
+    //across = 1;
+    across = floor(2.16*now.second());
+    display.fillRect(0,36,across,2,1);
+    display.display();
+    delay(500);
+    display.fillRect(across,36,1,2,1);
+    display.display();
+    delay(500);
+    //++across;
   
-display.display();
-delay(100);
-display.clearDisplay();
-// line going across for seconds
-//if (now.second() > 1) {
-//    display.fillRect(0,30,2.16*now.second()-2,2,1);
-//    Serial.print("  ");Serial.println(2*now.second());
-//    display.display();
-//    delay(500);
-////    display.fillRect(0,30,2.16*now.second()-1,2,1);
-////    Serial.print("  ");Serial.println(2*now.second()+1);
-////    display.display();
-////    delay(500);
-//  }
-//  else {
-//   display.display();
-//    Serial.print("  ");Serial.println(2*now.second());
-//    delay(500);
-//    display.clearDisplay();
-//  }
-  
+  }
+else {
+  //across = 1;
 }
+//  display.display();
+//  delay(1000);
+  display.clearDisplay();
+
+}
+  
