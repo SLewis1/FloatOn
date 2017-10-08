@@ -15,7 +15,7 @@ int textSize = 4;
 int sec = 0;
 int across = 0;
 
-//#define seconds
+//#define seconds  //show seconds
 
 void setup() {
 //  Serial.begin(9600);
@@ -79,23 +79,30 @@ void loop() {
 //line going across
 //Serial.print("  ");Serial.println(2*now.second());
 //Serial.print("  ");Serial.println(across);
-if (now.second() > 0) {
-    //across = 1;
-    across = floor(2.16*now.second());
-    display.fillRect(0,36,across,2,1);
-    display.display();
-    delay(500);
-    display.fillRect(across,36,1,2,1);
-    display.display();
-    delay(500);
-    //++across;
-  
+
+  across = floor(2.16*now.second());
+  if (now.minute() % 2 == 0)  //even minutes
+  {
+      //growing white bar
+      display.fillRect(0,36,across,2,1);
+      display.display();
+      delay(500);
+      display.fillRect(across,36,1,2,1);
+      display.display();
+      delay(500);
   }
-else {
-  //across = 1;
-}
-//  display.display();
-//  delay(1000);
+  else // odd minutes
+  {
+      //growing black bar (white shrinking)
+      display.fillRect(0,36,128,2,1);
+      display.fillRect(0,36,across,2,0);
+      display.display();
+      delay(500);
+      display.fillRect(across,36,1,2,0);
+      display.display();
+      delay(500);
+  }
+
   display.clearDisplay();
 
 }
