@@ -44,7 +44,7 @@ void setup() {
   
   pinMode(LEDsensorPin, OUTPUT); // sets the digital pin 3 as output led for sensor reading
   pinMode(LED_OB, OUTPUT);
-  digitalWrite(13,LOW); //turn off onboard LED
+  digitalWrite(LED_OB,LOW); //turn off onboard LED
   
   pinMode(RFM69_RST, OUTPUT);
   
@@ -65,8 +65,6 @@ void setup() {
     //Serial.println("setFrequency failed");
   }
 
-  // If you are using a high power RF69 eg RFM69HW, you *must* set a Tx power with the
-  // ishighpowermodule flag set like this:
   rf69.setTxPower(14, true);  // range from 14-20 for power, 2nd arg must be true for 69HCW
 
   // The encryption key has to be the same as the one in the server
@@ -103,10 +101,13 @@ void loop() {
   {
       strncpy(radiopacket, "OFF " , sizeof(radiopacket));
   }
+  //Serial.print("measured battery: "); Serial.println(measuredvbat);
   
-  //Serial.print("VBat: " ); Serial.println(measuredvbat);
    if (measuredvbat < 3.4) {
       strncat(radiopacket, "LBat", 11);
+      //Serial.print("VBat: " ); Serial.println(measuredvbat);
+      //Blink(LED_OB, 1000, 5); //blink LED 3 times, 40ms between blinks
+      
    }
    
  
@@ -122,7 +123,7 @@ void loop() {
         //Serial.print("Got reply from #"); Serial.print(from); Serial.print(" : ");
         //Serial.print(" [RSSI :"); Serial.print(rf69.lastRssi()); Serial.print("] : ");
         //Serial.println((char*)buf);     
-        Blink(LED_OB, 40, 3); //blink LED 3 times, 40ms between blinks
+        Blink(LED_OB, 80, 3); //blink LED 3 times, 40ms between blinks
       }
       else {
         //Serial.println("No reply, is anyone listening?");
@@ -131,12 +132,11 @@ void loop() {
     } 
     else {
       //Serial.println("Sending failed (no ack)");
-      //Blink(12, 1000, 3);
+      //Blink(LED_OB, 400, 3);
     }
 
   sleepNow();
    
-  
 }
 
 
