@@ -1,5 +1,5 @@
 #include <SPI.h>
-#include <Wire.h>
+#include <Wire.h>l
 #include <RH_RF69.h>
 #include <RHReliableDatagram.h>
 #include <Adafruit_GFX.h>
@@ -10,6 +10,9 @@
 #include <clockType.h>
 clockType room[6];
 
+
+//ALWAYS CHECK THIS BEFORE FINISHING!!
+//#define AlwaysOnOff    //debug mode so box lights follow sensors
 
 #define SDd
 //#define OLEDd
@@ -38,15 +41,15 @@ clockType room[6];
   RHReliableDatagram rf69_manager(rf69, MY_ADDRESS);
 
 //OLED
-  #ifdef OLEDdebugHeader
+#ifdef OLEDdebugHeader
   #define OLED_CS 6 
   #define OLED_RESET 9
   #define OLED_DC 5
 
-  //#define OLED_CLK 13
-  //#define OLED_MOSI 11
-  Adafruit_SSD1325 display(OLED_DC, OLED_RESET, OLED_CS);
-  #endif //OLEDdebugHeader
+  #define OLED_CLK 13
+  #define OLED_MOSI 11
+  Adafruit_SSD1325 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+#endif //OLEDdebugHeader
 
 //RTC
   RTC_PCF8523 rtc;
@@ -343,7 +346,9 @@ void loop() {
     }
     
  
-
+#ifdef AlwaysOnOff
+  ActiveDisplayWindow = false;
+#endif
 
 
    
@@ -384,20 +389,23 @@ void loop() {
           //  Always log. Before float lights go on and off with shower. After float lights go on and stay on until reset later.
           if (strstr((char*)buf, "ON")) 
           {
+            //blink WITH delay for LBAT
+            /*
             if (ActiveDisplayWindow)
             {
              if (strstr((char*)buf, "LBat")) 
               {
-                Blink(DisplayLED[from], 2000, 30); //blink LED for 2 minutes LOW BATTERY WARNING
+                //Blink(DisplayLED[from], 2000, 30); //blink LED for 2 minutes LOW BATTERY WARNING
               }
             }
             else
             {
               if (strstr((char*)buf, "LBat")) 
               {
-                Blink(DisplayLED[from], 2000, 8); //blink LED for 32 seconds LOW BATTERY WARNING
+                //Blink(DisplayLED[from], 2000, 8); //blink LED for 32 seconds LOW BATTERY WARNING
               }
             }
+            */
             digitalWrite(DisplayLED[from],LOW); 
             room[from].setTimeON(now.hour(),now.minute());
             room[from].printTimeON(); 
