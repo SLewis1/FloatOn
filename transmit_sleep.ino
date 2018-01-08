@@ -5,6 +5,8 @@
 #include <avr/sleep.h>
 #include <avr/io.h>
 
+#define NewSleepMode
+
 
 /************ Radio Setup ***************/
 #define MY_ADDRESS     5
@@ -101,13 +103,22 @@ void loop() {
   {
       strncpy(radiopacket, "OFF " , sizeof(radiopacket));
   }
-  //Serial.print("measured battery: "); Serial.println(measuredvbat);
+  Serial.print("measured battery: "); Serial.println(measuredvbat);
   
-   if (measuredvbat < 3.4) {
-      strncat(radiopacket, "LBat", 11);
+  
+  //Battery Voltage Transmit
+  /*
+  char charVbat[5];                
+  //1 is mininum width, 2 is precision; float value is copied onto buff
+  dtostrf(measuredvbat, 1, 2, charVbat);
+  strncat(radiopacket, charVbat, 4);
+  strncat(radiopacket, "  ", 2);
+`*/
+
+   if (measuredvbat < 3.5) {
+      strncat(radiopacket, "LBat ", 5);
       //Serial.print("VBat: " ); Serial.println(measuredvbat);
       //Blink(LED_OB, 1000, 5); //blink LED 3 times, 40ms between blinks
-      
    }
    
  
@@ -123,24 +134,66 @@ void loop() {
         //Serial.print("Got reply from #"); Serial.print(from); Serial.print(" : ");
         //Serial.print(" [RSSI :"); Serial.print(rf69.lastRssi()); Serial.print("] : ");
         //Serial.println((char*)buf);     
-        Blink(LED_OB, 80, 3); //blink LED 3 times, 40ms between blinks
+        Blink(13, 80, 2); //blink LED 3 times, 40ms between blinks
       }
-      else {
+      //else {
         //Serial.println("No reply, is anyone listening?");
         //Blink(12, 1000, 2);
-      }
+      //}
     } 
-    else {
+    //else {
       //Serial.println("Sending failed (no ack)");
       //Blink(LED_OB, 400, 3);
-    }
+    //}
 
   sleepNow();
    
 }
 
 
+#ifdef NewSleepMode
+void sleepNow(void)
+{
+    rf69.sleep();
+    
+    EIFR = (1 << INTF3);   //use before attachInterrupt(3,isr,xxxx) to clear interrupt 3 flag
+    
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 
+    noInterrupts();
+    
+    sleep_enable();
+
+    attachInterrupt(digitalPinToInterrupt(interruptPin), pinInterrupt, CHANGE);
+    
+    interrupts();
+
+    //digitalWrite(13,HIGH); //turn on ob_LED to indicate sleep
+    sleep_mode();
+    
+    //digitalWrite(13,LOW); //turn off ob_LED to indicade awake
+}
+
+void pinInterrupt(void)  //ISR Interrupt Service Routine
+{ 
+  sleep_disable();
+  detachInterrupt(digitalPinToInterrupt(interruptPin)); 
+}
+#endif //NewSleepMode
+
+
+void Blink(byte PIN, byte DELAY_MS, byte loops) {
+  for (byte i=0; i<loops; i++)  {
+    digitalWrite(PIN,HIGH);
+    delay(DELAY_MS);
+    digitalWrite(PIN,LOW);
+    delay(DELAY_MS);
+  }
+}
+
+
+
+#ifndef NewSleepMode
 void sleepNow(void)
 {
     rf69.sleep();
@@ -158,27 +211,17 @@ void sleepNow(void)
     sleep_enable();
 
     //4 Put the device to sleep:
-    //digitalWrite(13,LOW); //turn off LED to indicate sleep
+    digitalWrite(13,HIGH); //turn on LED to indicate sleep
     sleep_mode();
-        
-    //delay(1000);
  
     //5 Upon waking up, sketch continues from this point.
     sleep_disable();
     
-    //digitalWrite(13,HIGH); //turn on LED to indicade awake
+    digitalWrite(13,LOW); //turn on LED to indicade awake
 }
 
 void pinInterrupt(void)  //ISR Interrupt Service Routine
 { 
   detachInterrupt(digitalPinToInterrupt(interruptPin)); 
 }
-
-void Blink(byte PIN, byte DELAY_MS, byte loops) {
-  for (byte i=0; i<loops; i++)  {
-    digitalWrite(PIN,HIGH);
-    delay(DELAY_MS);
-    digitalWrite(PIN,LOW);
-    delay(DELAY_MS);
-  }
-}
+#endif //OldSleepMode
