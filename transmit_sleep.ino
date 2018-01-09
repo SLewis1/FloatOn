@@ -26,6 +26,7 @@ RHReliableDatagram rf69_manager(rf69, MY_ADDRESS);
 
 
 //*********************************************************************************************
+
 #define VBATPIN       A9 //battery voltage
 
 #define interruptPin  1  //Tx
@@ -110,7 +111,7 @@ void loop() {
   dtostrf(measuredvbat, 1, 2, charVbat);
   strncat(radiopacket, charVbat, 4);
   strncat(radiopacket, "  ", 2);
-`*/
+  */
 
    if (measuredvbat < 3.5) {
       strncat(radiopacket, "LBat ", 5);
