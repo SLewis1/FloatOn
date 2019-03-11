@@ -14,12 +14,11 @@ clockType room[6];
 //ALWAYS CHECK THIS BEFORE FINISHING!!
 //#define AlwaysOnOff    //debug mode so box lights follow sensors
 
-//#define SDd
 #define OLEDd
+//#define SDd
 
 #define SerialIncrement
-//  #define BUTTON
-
+#define BUTTON
 
 //Radio
   #define RF69_FREQ     915.0
@@ -54,7 +53,7 @@ clockType room[6];
 //RTC
   RTC_PCF8523 rtc;
 
-#ifdef SDd
+/* #ifdef SDd
 //SD
   SdCard card;
   Fat16 file;
@@ -83,7 +82,7 @@ clockType room[6];
     file.write(&buf[sizeof(buf) - i], i); // write the part of buf with the number
   }
 #endif //SDd
-
+*/
 
 //Front LEDs
   //               n/a  A0, A1, A2, A3, A4, A5
@@ -116,6 +115,7 @@ void setup() {
   pinMode(ButtonInput, INPUT);
 
   pinMode(LED, OUTPUT);
+  pinMode(5, OUTPUT);
   pinMode(RFM69_RST, OUTPUT);
   digitalWrite(RFM69_RST, LOW);
   
@@ -142,7 +142,7 @@ void setup() {
   rf69.setEncryptionKey(key);
   Serial.print(F("RFM69 radio @"));  Serial.print((int)RF69_FREQ);  Serial.println(F(" MHz"));
 
-#ifdef SDd
+/* #ifdef SDd
   // initialize the SD card
   if (!card.begin(10)) 
   {
@@ -175,6 +175,7 @@ void setup() {
     return;
   }
 #endif //SDd
+*/
 
 #ifdef OLEDdebugSetup
   display.setTextColor(1);
@@ -355,16 +356,26 @@ void loop() {
 
    
 #ifdef BUTTON
-  if (digitalRead(ButtonInput) == HIGH)   //kk
+  if (digitalRead(ButtonInput) == HIGH)
   {
-    Serial.print("Button Pushed...");
-    delay(1500);
-    SDlogBeforeFloat();
-    SDlogAfterFloat();
-    ResetAll();
+    Serial.print("Button Pushed...\n");
+    delay(500);
+    rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour(), now.minute() - 1, now.second())); 
+    digitalWrite(5, HIGH);delay(200);digitalWrite(5, LOW);delay(200);
+    digitalWrite(5, HIGH);delay(200);digitalWrite(5, LOW);delay(200);
+    delay(2000);
+    
+  } else {
+    digitalWrite(5, LOW);
+  }  
+    /* SD writing on demand  
+    //delay(1500);
+    //SDlogBeforeFloat();
+    //SDlogAfterFloat();
+    //ResetAll();
     //ActiveMinuteCounter = ActiveMinuteCounter + 60;
-  }
-#endif
+    */
+#endif //button
     
 #ifdef OLEDdebugDisplay
   display.display();
@@ -433,21 +444,21 @@ void loop() {
         
   }  
 
-//
-////Serial CLOCK  
-////      DateTime now = rtc.now();
-//      Serial.print(now.hour());
-//      Serial.print(F(":")); 
-//      Serial.print(now.minute());
-//      Serial.print(F(":")); 
-//      Serial.print(now.second());
-//      if (now.hour() >=12) {
-//        Serial.println("PM");
-//      }
-//      else {
-//        Serial.println("AM");
-//      }
-   
+
+/*//Serial CLOCK  
+      DateTime now = rtc.now();
+      Serial.print(now.hour());
+      Serial.print(F(":")); 
+      Serial.print(now.minute());
+      Serial.print(F(":")); 
+      Serial.print(now.second());
+      if (now.hour() >=12) {
+        Serial.println("PM");
+      }
+      else {
+        Serial.println("AM");
+      }
+*/   
 
      
   delay(1000);  //End Loop
@@ -508,7 +519,7 @@ void displayLZ(int zMin) //adds a leading zero if needed to fill up two spaces
 }
 #endif //OLEDdebugLZ
 
-#ifdef SDd
+/* #ifdef SDd
 void sdLZ(int zMin) //adds a leading zero if needed to fill up two spaces
 {
     if (zMin < 10) {
@@ -646,6 +657,7 @@ void comma4()
   file.print(",,,,");
 }
 #endif //SDd
+*/
 
 void Blink(byte PIN, int DELAY_MS, int loops)
 {
@@ -657,4 +669,3 @@ void Blink(byte PIN, int DELAY_MS, int loops)
     delay(DELAY_MS);
   }
 }
-
