@@ -295,7 +295,7 @@ void loop() {
   //*********************************************
 
 //Times that the display clears and resets for next floats                               
-#ifdef SDd   
+//#ifdef SDd   
    if ((now.hour()==8  && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //8 am     (7-8:30)    
        (now.hour()==10 && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //10 am    (9-10:30)
        (now.hour()==12 && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //12 pm    (11-12:30) 
@@ -307,8 +307,8 @@ void loop() {
        (now.hour()==0  && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //12 am     (11-1:30)
        (now.hour()==3  && now.minute()==0 && now.second()>=0 && now.second()<2) )        //3 am     (2-4:30)
    {
-    delay(4000);
-    SDlogBeforeFloat();
+    //delay(4000);
+    //SDlogBeforeFloat();
     ResetAll();    
    }
    
@@ -324,11 +324,11 @@ void loop() {
        (now.hour()==5  && now.minute()==0 && now.second()>=0 && now.second()<2) )        //5 am     (2-4:30)
        
    {
-    delay(4000);
-    SDlogAfterFloat();
+    //delay(4000);
+    //SDlogAfterFloat();
     ResetAll();    
    }
-#endif //SDd
+//#endif //SDd
 
    if ((now.hour()>=8  && now.hour()<9)  ||
        (now.hour()>=10 && now.hour()<11) ||
@@ -360,9 +360,10 @@ void loop() {
   {
     Serial.print("Button Pushed...\n");
     delay(500);
+    //rtc.adjust(DateTime(2019, 3, 11, 22, 27, 0));
     rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour(), now.minute() - 1, now.second())); 
-    digitalWrite(5, HIGH);delay(200);digitalWrite(5, LOW);delay(200);
-    digitalWrite(5, HIGH);delay(200);digitalWrite(5, LOW);delay(200);
+    digitalWrite(13, HIGH);delay(200);digitalWrite(13, LOW);delay(200);
+    digitalWrite(13, HIGH);delay(200);digitalWrite(13, LOW);delay(200);
     delay(2000);
     
   } else {
