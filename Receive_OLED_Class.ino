@@ -203,6 +203,7 @@ uint8_t data[] = "And hello back to you";
 // Dont put this on the stack:
 uint8_t buf[RH_RF69_MAX_MESSAGE_LEN];
 uint8_t from;
+
                
 //*****************************************************************************
 
@@ -360,8 +361,17 @@ void loop() {
   {
     Serial.print("Button Pushed...\n");
     delay(500);
-    //rtc.adjust(DateTime(2019, 3, 11, 22, 27, 0));
-    rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour(), now.minute() - 1, now.second())); 
+    //rtc.adjust(DateTime(2019, 3, 11, 22, 2, 0));   //MANUALLY SETS THE RTC CLOCK TIME
+    
+    if (now.minute() == 0) 
+    {
+      rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour()-1, 59, now.second()));
+    }
+    else
+    {
+      rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour(), now.minute() - 1, now.second())); 
+    }
+    
     digitalWrite(13, HIGH);delay(200);digitalWrite(13, LOW);delay(200);
     digitalWrite(13, HIGH);delay(200);digitalWrite(13, LOW);delay(200);
     delay(2000);
