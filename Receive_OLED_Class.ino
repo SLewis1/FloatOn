@@ -15,7 +15,6 @@ clockType room[6];
 //#define AlwaysOnOff    //debug mode so box lights follow sensors
 
 #define OLEDd
-//#define SDd
 
 #define SerialIncrement
 #define BUTTON
@@ -52,37 +51,6 @@ clockType room[6];
 
 //RTC
   RTC_PCF8523 rtc;
-
-/* #ifdef SDd
-//SD
-  SdCard card;
-  Fat16 file;
-
-  char name[] = "Shower00.CSV";
-  #define error(s) error_P(PSTR(s)) // store error strings in flash to save RAM
-  void error_P(const char* str) {
-    PgmPrint("error: ");
-    SerialPrintln_P(str);
-    //if (card.errorCode) {
-    //  PgmPrint("SD error: ");
-    //  Serial.println(card.errorCode, HEX);
-    //}
-    //while(1);
-    } 
-  void writeNumber(uint32_t n) {
-    //Write an unsigned number to file.
-    //Normally you would use print to format numbers.
-    uint8_t buf[10];
-    uint8_t i = 0;
-    do {
-      i++;
-      buf[sizeof(buf) - i] = n%10 + '0';
-      n /= 10;
-    } while (n);
-    file.write(&buf[sizeof(buf) - i], i); // write the part of buf with the number
-  }
-#endif //SDd
-*/
 
 //Front LEDs
   //               n/a  A0, A1, A2, A3, A4, A5
@@ -141,41 +109,6 @@ void setup() {
                     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   rf69.setEncryptionKey(key);
   Serial.print(F("RFM69 radio @"));  Serial.print((int)RF69_FREQ);  Serial.println(F(" MHz"));
-
-/* #ifdef SDd
-  // initialize the SD card
-  if (!card.begin(10)) 
-  {
-    error("card.begin");
-    Serial.println("SD card not inserted");
-  }
-  // initialize a FAT16 volume
-  if (!Fat16::init(&card)) 
-  {
-    error("Fat16::init");
-  }
-  else
-  {
-    Serial.println("SD card ready");
-  }
-
-
-  // open ShowerData.csv and append new data
-  for (uint8_t i = 0; i < 100; i++) {
-    name[6] = i/10 + '0';
-    name[7] = i%10 + '0';
-    // O_CREAT - create the file if it does not exist
-    // O_EXCL - fail if the file exists
-    // O_WRITE - open for write
-    if (!file.open(name, O_CREAT | O_APPEND | O_WRITE)) break;
-  }
-  if (!file.isOpen()) {
-    error("file.open");
-    Serial.println("Error opening SD file");
-    return;
-  }
-#endif //SDd
-*/
 
 #ifdef OLEDdebugSetup
   display.setTextColor(1);
@@ -295,8 +228,7 @@ void loop() {
       //Serial.println(F("...Display Updated..."));
   //*********************************************
 
-//Times that the display clears and resets for next floats                               
-//#ifdef SDd   
+//Times that the display clears and resets for next floats                                 
    if ((now.hour()==8  && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //8 am     (7-8:30)    
        (now.hour()==10 && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //10 am    (9-10:30)
        (now.hour()==12 && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //12 pm    (11-12:30) 
@@ -308,8 +240,6 @@ void loop() {
        (now.hour()==0  && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //12 am     (11-1:30)
        (now.hour()==3  && now.minute()==0 && now.second()>=0 && now.second()<2) )        //3 am     (2-4:30)
    {
-    //delay(4000);
-    //SDlogBeforeFloat();
     ResetAll();    
    }
    
@@ -324,12 +254,10 @@ void loop() {
        (now.hour()==2  && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //2 am    (11-1:30)
        (now.hour()==5  && now.minute()==0 && now.second()>=0 && now.second()<2) )        //5 am     (2-4:30)
        
-   {
-    //delay(4000);
-    //SDlogAfterFloat();
+
     ResetAll();    
    }
-//#endif //SDd
+
 
    if ((now.hour()>=8  && now.hour()<9)  ||
        (now.hour()>=10 && now.hour()<11) ||
@@ -361,7 +289,8 @@ void loop() {
   {
     Serial.print("Button Pushed...\n");
     delay(500);
-    //rtc.adjust(DateTime(2019, 3, 11, 22, 2, 0));   //MANUALLY SETS THE RTC CLOCK TIME
+    ///rtc.adjust(DateTime(2019, 11, 18, 19, 55, 0));   //MANUALLY SETS THE RTC CLOCK TIME
+    Serial.print("time set\n");
     
     if (now.minute() == 0) 
     {
@@ -379,13 +308,7 @@ void loop() {
   } else {
     digitalWrite(5, LOW);
   }  
-    /* SD writing on demand  
-    //delay(1500);
-    //SDlogBeforeFloat();
-    //SDlogAfterFloat();
-    //ResetAll();
-    //ActiveMinuteCounter = ActiveMinuteCounter + 60;
-    */
+
 #endif //button
     
 #ifdef OLEDdebugDisplay
@@ -530,145 +453,6 @@ void displayLZ(int zMin) //adds a leading zero if needed to fill up two spaces
 }
 #endif //OLEDdebugLZ
 
-/* #ifdef SDd
-void sdLZ(int zMin) //adds a leading zero if needed to fill up two spaces
-{
-    if (zMin < 10) {
-      file.print(F("0"));
-      file.print(zMin);
-    }
-    else {
-      file.print(zMin);
-    }
-}
-
-
-void SDlogBeforeFloat()
-{
-  //file.open(name, O_APPEND | O_WRITE);
-  Serial.print("Writing to: ");
-  Serial.print(name);
-
-  //06/26/17,Room 1,,,,Room 2,,,,Room 3,,,,Room 4,,,,Room 5,,,,Room 6
-  //file.print("RTC MMDDYY");
-  DateTime now = rtc.now();
-  file.print(now.month(), DEC); 
-  file.print('/');
-  file.print(now.day(), DEC); 
-  file.print('/');
-  file.print(now.year(), DEC); 
-  comma();
-  
-  file.print("Room 1");comma4();file.print("Room 2");comma4();file.print("Room 3");comma4();file.print("Room 4");comma4();file.print("Room 5");comma4();file.print("Room 6");
-  file.println();
-  
-  //7AM – 8:30AM,Time On,Time Off,Duration,,Time On,Time Off,Duration,,Time On,Time Off,Duration,,Time On,Time Off,Duration,,Time On,Time Off,Duration,,Time On,Time Off,Duration
-  //file.print("7AM-8:30AM");
-    switch (now.hour()) {   
-    case 7: case 8:  file.print(F("7AM-9:30AM")); 
-      break;
-    case 9:  case 10: file.print(F("9AM-10:30AM")); 
-      break;
-    case 11: case 12: file.print(F("11AM-12:30PM")); 
-      break;
-    case 13: case 14: file.print(F("1PM-2:30PM")); 
-      break;  
-    case 15: case 16: file.print(F("3PM-4:30PM")); 
-      break;
-    case 17: case 18: file.print(F("5PM-6:30PM")); 
-      break;
-    case 19: case 20: file.print(F("7PM-8:30PM")); 
-      break;  
-    case 21: case 22: file.print(F("9PM-10:30PM")); 
-      break;
-    case 23: case 0: case 1: file.print(F("11PM-1:30AM")); 
-      break;
-    case 2: case 3: case 4: file.print(F("2AM-4:30AM")); 
-      break;
-    default: comma();
-      break;      
-   }
-  comma();
-  for (int i=1; i<=6; i++){
-    file.print("Time On");comma();
-    file.print("Time Off");comma();
-    file.print("Duration");comma2();
-  }
-  file.println();
-
-  //Before Float Shower,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02
-  file.print(F("Before-Float Shower"));
-  comma();
-
-  SDprintTimes();
-  
-  if (!file.sync()) error("sync");
-  PgmPrintln(" ...Done");
-}
-
-void SDlogAfterFloat()
-{
-  //file.open(name, O_APPEND | O_WRITE);
-  Serial.print("Writing to: ");
-  Serial.print(name);
-
-  //Before Float Shower,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02,,03:01 PM,03:03 PM,00:02
-  file.print(F("After-Float Shower"));
-  comma();
-  
-  SDprintTimes();
-  file.println();
-  
-  if (!file.sync()) error("sync");
-  PgmPrintln("Done with After times");
-}
-
-void SDprintTimes()
-{
-  for (int i=1;i<=6;i++)
-  {
-    if (room[i].onExists() && room[i].offExists()) {
-      timeFormat(room[i].hh_on, room[i].mm_on, room[i].ampm_on);comma();
-      timeFormat(room[i].hh_off, room[i].mm_off, room[i].ampm_off);comma();
-      file.print(room[i].dur); comma2(); }
-    else {
-      comma4();
-    }
-  }
-  file.println();
-}
-
-void timeFormat(int tempHH, int tempMM, bool tempAP)
-{
-  
-  //DateTime now = rtc.now();
-  sdLZ(tempHH);
-  file.print(F(":"));
-  sdLZ(tempMM); 
-  if (tempAP > 0){
-    file.print(F(" PM"));
-  }
-  else {
-    file.print(F(" AM"));
-  }
-}
-
-void comma()
-{
-  file.print(",");
-}
-
-void comma2()
-{
-  file.print(",,");
-}
-
-void comma4()
-{
-  file.print(",,,,");
-}
-#endif //SDd
-*/
 
 void Blink(byte PIN, int DELAY_MS, int loops)
 {
