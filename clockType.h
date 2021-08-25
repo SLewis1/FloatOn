@@ -4,8 +4,8 @@ class clockType
 {
   public:
     clockType();
-    void setTimeON(int, int);
-    void setTimeOFF(int, int);
+    void setTimeON(int, int, int32_t);
+    void setTimeOFF(int, int, int32_t);
     void printTimeON() const;
     void printTimeOFF() const;
     bool onExists() const;
@@ -18,4 +18,6 @@ class clockType
     int mm_off;
     bool ampm_off;
     int dur;
+    int32_t unixxtime_on;
+    int32_t unixxtime_off;
 };
