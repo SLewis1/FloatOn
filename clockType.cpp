@@ -75,12 +75,11 @@ void clockType::printTimeON() const
   Serial.print(mm_on);
 	
   if (ampm_on == 0) {
-     Serial.print("AM");
+     Serial.println("AM");
   }
   else {
-     Serial.print("PM");
+     Serial.println("PM");
   }
-  Serial.print(" unixtime = "); Serial.println(unixxtime_on);
 }
 
 
@@ -97,7 +96,6 @@ void clockType::printTimeOFF() const
   else {
      Serial.print("PM");
   }
-   Serial.print(" unixtime = "); Serial.print(unixxtime_off);
 
   Serial.print("  dur: ");
   Serial.print(dur);
