@@ -7,15 +7,19 @@ clockType::clockType()
 	hh_on = 0;
 	mm_on = 0;
 	ampm_on = 0;
+	unixxtime_on = 0;
 
      	hh_off = 0;
 	mm_off = 0;
 	ampm_off = 0;
+	unixxtime_off = 0;
 
     	dur = 0;
+
+	
 }
 
-void clockType::setTimeON(int hours24, int minutes)
+void clockType::setTimeON(int hours24, int minutes, int32_t unixxtime)
 {
     mm_on = minutes;
 
@@ -31,9 +35,12 @@ void clockType::setTimeON(int hours24, int minutes)
         hh_on = hours24; 
         ampm_on = 0;} 
      }
+     
+     unixxtime_on = unixxtime;
+     
 }
 
-void clockType::setTimeOFF(int hours24, int minutes)
+void clockType::setTimeOFF(int hours24, int minutes, int32_t unixxtime)
 {
     mm_off = minutes;
 
@@ -52,6 +59,8 @@ void clockType::setTimeOFF(int hours24, int minutes)
  
      dur = mm_off - mm_on;
      if (dur < 0) dur+=60;
+
+     unixxtime_off = unixxtime;
 }
 
 
@@ -66,11 +75,12 @@ void clockType::printTimeON() const
   Serial.print(mm_on);
 	
   if (ampm_on == 0) {
-     Serial.println("AM");
+     Serial.print("AM");
   }
   else {
-     Serial.println("PM");
+     Serial.print("PM");
   }
+  Serial.print(" unixtime = "); Serial.println(unixxtime_on);
 }
 
 
@@ -87,10 +97,12 @@ void clockType::printTimeOFF() const
   else {
      Serial.print("PM");
   }
+   Serial.print(" unixtime = "); Serial.print(unixxtime_off);
 
   Serial.print("  dur: ");
   Serial.print(dur);
   Serial.println("m");
+
 }
 
 bool clockType::onExists() const
@@ -106,7 +118,7 @@ bool clockType::onExists() const
 }
 
 bool clockType::offExists() const
-{
+{ 
   if (hh_off > 0) 
   {
     return true;
@@ -115,6 +127,8 @@ bool clockType::offExists() const
   {
     return false;
   } 
+
+  
 }
 
 
