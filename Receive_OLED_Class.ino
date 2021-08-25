@@ -5,8 +5,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1325.h>
 #include <RTClib.h>
-#include <Fat16.h>
-#include <Fat16util.h>
 #include <clockType.h>
 clockType room[6];
 
@@ -136,7 +134,6 @@ uint8_t data[] = "And hello back to you";
 // Dont put this on the stack:
 uint8_t buf[RH_RF69_MAX_MESSAGE_LEN];
 uint8_t from;
-
                
 //*****************************************************************************
 
@@ -177,7 +174,10 @@ void loop() {
       else {
         display.print("AM");
       }
- 
+   //DISPLAY SECONDS IN LOWER RIGHT CORNER
+     // display.setCursor(116,56);
+      //displayLZ(now.second());
+      
   //DISPLAY SCHEDULED FLOAT TIME IN UPPER LEFT CORNER
   display.setCursor(0,0);
  // char schedule[13];
@@ -216,7 +216,9 @@ void loop() {
       display.print(i); display.print(F(". "));
       if (room[i].onExists()) {
         display.print(room[i].hh_on); display.print(F(":")); displayLZ(room[i].mm_on);
-        if (room[i].offExists()) {
+        if (room[i].offExists()
+         && (room[i].unixxtime_off > room[i].unixxtime_on) )   //AND Checks that Off time is after On Time
+        {
           display.print(F("-"));display.print(room[i].hh_off);display.print(F(":"));displayLZ(room[i].mm_off);
           display.print(F(" ("));display.print(room[i].dur);display.print(F("m)"));
         }
@@ -228,7 +230,8 @@ void loop() {
       //Serial.println(F("...Display Updated..."));
   //*********************************************
 
-//Times that the display clears and resets for next floats                                 
+//Times that the display clears and resets for next floats                               
+//#ifdef SDd   
    if ((now.hour()==8  && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //8 am     (7-8:30)    
        (now.hour()==10 && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //10 am    (9-10:30)
        (now.hour()==12 && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //12 pm    (11-12:30) 
@@ -254,10 +257,12 @@ void loop() {
        (now.hour()==2  && now.minute()==0 && now.second()>=0 && now.second()<2) ||       //2 am    (11-1:30)
        (now.hour()==5  && now.minute()==0 && now.second()>=0 && now.second()<2) )        //5 am     (2-4:30)
        
-
+   {
+    //delay(4000);
+    //SDlogAfterFloat();
     ResetAll();    
    }
-
+//#endif //SDd
 
    if ((now.hour()>=8  && now.hour()<9)  ||
        (now.hour()>=10 && now.hour()<11) ||
@@ -289,18 +294,8 @@ void loop() {
   {
     Serial.print("Button Pushed...\n");
     delay(500);
-    ///rtc.adjust(DateTime(2019, 11, 18, 19, 55, 0));   //MANUALLY SETS THE RTC CLOCK TIME
-    Serial.print("time set\n");
-    
-    if (now.minute() == 0) 
-    {
-      rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour()-1, 59, now.second()));
-    }
-    else
-    {
-      rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour(), now.minute() - 1, now.second())); 
-    }
-    
+    //rtc.adjust(DateTime(2019, 3, 11, 22, 27, 0));
+    rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour(), now.minute() - 1, now.second())); 
     digitalWrite(13, HIGH);delay(200);digitalWrite(13, LOW);delay(200);
     digitalWrite(13, HIGH);delay(200);digitalWrite(13, LOW);delay(200);
     delay(2000);
@@ -308,7 +303,7 @@ void loop() {
   } else {
     digitalWrite(5, LOW);
   }  
-
+   
 #endif //button
     
 #ifdef OLEDdebugDisplay
@@ -356,7 +351,7 @@ void loop() {
             }
             */
             digitalWrite(DisplayLED[from],LOW); 
-            room[from].setTimeON(now.hour(),now.minute());
+            room[from].setTimeON(now.hour(),now.minute(),now.unixtime());
             room[from].printTimeON(); 
           }
           
@@ -365,7 +360,7 @@ void loop() {
             {
              digitalWrite(DisplayLED[from],HIGH); 
             }
-            room[from].setTimeOFF(now.hour(),now.minute());
+            room[from].setTimeOFF(now.hour(),now.minute(),now.unixtime());
             room[from].printTimeOFF();
           }
      
@@ -406,8 +401,8 @@ void ResetAll()
 {
     for (int i=1;i<=6;i++)
     {
-      room[i].setTimeON(-1,0);
-      room[i].setTimeOFF(-1,0);
+      room[i].setTimeON(-1,0,0);
+      room[i].setTimeOFF(-1,0,0);
     }
     //all off
     for (int l=1;l<=6;l++) { digitalWrite(DisplayLED[l],HIGH); }
